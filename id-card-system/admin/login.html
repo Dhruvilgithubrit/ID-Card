@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - ID Card Portal</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: var(--bg);
+      padding: 20px;
+    }
+
+    .login-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 48px 32px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }
+
+    .login-emoji {
+      font-size: 48px;
+      margin-bottom: 24px;
+      display: block;
+    }
+
+    .login-card h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+
+    .login-card .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+      font-weight: 500;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .login-form input {
+      margin-bottom: 0 !important;
+      background-color: #f1f5f9 !important;
+      color: var(--text) !important;
+      border: 2px solid #e2e8f0 !important;
+    }
+
+    .login-form button {
+      margin-top: 8px;
+    }
+
+    .help-text {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 16px;
+      font-weight: 500;
+    }
+
+    .error-box {
+      background: #ffebee;
+      color: #c62828;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <span class="login-emoji">🪪</span>
+      <h1>Admin Login</h1>
+      <p class="subtitle">ID Card Management Portal</p>
+
+      <div id="errorBox" class="error-box" style="display: none;"></div>
+
+      <div class="login-form">
+        <div>
+          <input type="text" id="email" placeholder="Enter username" required>
+        </div>
+        <div>
+          <input type="password" id="password" placeholder="Enter password" required>
+        </div>
+        <button type="button" class="btn-primary" id="loginBtn" onclick="handleLogin()" style="width: 100%; padding: 14px; font-size: 16px;">Login</button>
+      </div>
+
+      <p class="help-text">Contact admin to reset password</p>
+    </div>
+  </div>
+
+  <script>
+    function handleLogin() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      if (email !== 'kasaredhruvil' || password !== '072008') {
+        showError('Invalid email or password');
+        return;
+      }
+
+      // Store token
+      localStorage.setItem('sb-token', 'admin-token-123');
+      
+      // Redirect
+      window.location.href = '/admin/dashboard';
+    }
+
+    function showError(message) {
+      const errorBox = document.getElementById('errorBox');
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+    }
+
+    // Check if already logged in
+    if (localStorage.getItem('sb-token')) {
+      window.location.href = '/admin/dashboard';
+    }
+  </script>
+</body>
+</html>
