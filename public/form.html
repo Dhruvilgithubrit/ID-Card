@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Registration - ID Card Portal</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h1>🪪 ID Card Portal</h1>
+  </header>
+
+
+  <!-- Main Content -->
+  <section class="container" style="padding-top: 48px; padding-bottom: 48px;">
+    <div style="max-width: 600px; margin: 0 auto;">
+      
+      <!-- Page Heading -->
+      <h2 id="pageHeading" style="font-size: 32px; font-weight: 700; margin-bottom: 8px; color: var(--text);">Loading...</h2>
+      <p style="font-size: 16px; color: var(--muted); margin-bottom: 32px;">Fill in your child's details below</p>
+
+      <!-- Success State (Hidden) -->
+      <div id="successState" class="card" style="display: none; background: linear-gradient(135deg, #10b981, #059669); border: none; margin-bottom: 24px;">
+        <div style="font-size: 24px; margin-bottom: 12px; color: white;">✓ Registration Successful!</div>
+        <p style="font-size: 16px; color: white;">Data saved for <strong id="successClass"></strong>, Roll No. <strong id="successRoll"></strong></p>
+      </div>
+
+      <!-- Error State (Hidden) -->
+      <div id="errorState" class="card" style="display: none; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; margin-bottom: 24px;">
+        <div style="font-size: 16px; font-weight: 600; color: white;">⚠ Error</div>
+        <p id="errorMessage" style="font-size: 15px; color: white; margin-top: 8px;"></p>
+      </div>
+
+      <!-- Form -->
+      <form id="registrationForm" class="card" style="background: var(--card); border: 1px solid #334155;">
+        
+        <!-- Child's Full Name -->
+        <div style="margin-bottom: 20px;">
+          <label for="childName">Child's Full Name *</label>
+          <input type="text" id="childName" name="childName" placeholder="e.g. Raj Kumar" required>
+        </div>
+
+        <!-- Class and Section -->
+        <div style="display: flex; gap: 12px; align-items: flex-end;">
+          <div style="flex: 1;">
+            <label for="class">Class *</label>
+            <select id="class" name="class" required>
+              <option value="">Select Class</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+              <option value="11">11</option>
+              <option value="12">12</option>
+            </select>
+          </div>
+          <div style="font-size: 24px; color: var(--muted); margin-bottom: 12px;">-</div>
+          <div style="flex: 1;">
+            <label for="section">Section *</label>
+            <select id="section" name="section" required>
+              <option value="">Select Section</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="E">E</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Roll Number -->
+        <div style="margin-bottom: 20px;">
+          <label for="rollNumber">Roll Number *</label>
+          <input type="number" id="rollNumber" name="rollNumber" placeholder="Check your school diary" min="1" max="999" required>
+        </div>
+
+        <!-- Parent Phone -->
+        <div style="margin-bottom: 20px;">
+          <label for="phone">Parent Phone *</label>
+          <input type="tel" id="phone" name="phone" placeholder="10-digit mobile number" pattern="[0-9]{10}" required>
+        </div>
+
+        <!-- Home Address -->
+        <div style="margin-bottom: 24px;">
+          <label for="address">Home Address *</label>
+          <textarea id="address" name="address" placeholder="Street, Area, City" rows="3" required></textarea>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 16px; font-size: 16px;">Submit Registration</button>
+      </form>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2024 ID Card Portal</p>
+  </footer>
+
+  <script src="/js/form.js"></script>
+</body>
+</html>
