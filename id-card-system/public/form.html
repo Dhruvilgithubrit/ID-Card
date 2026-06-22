@@ -42,6 +42,24 @@
           <input type="text" id="childName" name="childName" placeholder="e.g. Raj Kumar" required>
         </div>
 
+        <!-- Date of Birth and GR. No -->
+        <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+          <div style="flex: 1;">
+            <label for="dobText">Date of Birth *</label>
+            <div style="position: relative;">
+              <input type="text" id="dobText" name="dobText" placeholder="DD-MM-YYYY" maxlength="10" required
+                     style="padding-right: 42px;">
+              <input type="date" id="dobPicker" name="dobPicker"
+                     style="position: absolute; right: 0; top: 0; width: 42px; height: 100%; opacity: 0; cursor: pointer;">
+              <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 18px; color: var(--muted);">📅</span>
+            </div>
+          </div>
+          <div style="flex: 1;">
+            <label for="grNumber">GR. No *</label>
+            <input type="text" id="grNumber" name="grNumber" placeholder="e.g. GR-12345" required>
+          </div>
+        </div>
+
         <!-- Class and Section -->
         <div style="display: flex; gap: 12px; align-items: flex-end;">
           <div style="flex: 1;">
@@ -67,11 +85,11 @@
             <label for="section">Section *</label>
             <select id="section" name="section" required>
               <option value="">Select Section</option>
+              <option value="-">- (No Section)</option>
               <option value="A">A</option>
               <option value="B">B</option>
               <option value="C">C</option>
               <option value="D">D</option>
-              <option value="E">E</option>
             </select>
           </div>
         </div>

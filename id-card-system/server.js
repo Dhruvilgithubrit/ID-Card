@@ -98,10 +98,10 @@ app.get('/api/schools', async (req, res) => {
 //    Register a student
 app.post('/api/submit', async (req, res) => {
   try {
-    let { school_id, class: cls, roll_number, name, phone, address } = req.body;
+    let { school_id, class: cls, roll_number, name, dob, gr_number, phone, address } = req.body;
 
     // Validate required fields
-    if (!school_id || !cls || !roll_number || !name || !phone || !address) {
+    if (!school_id || !cls || !roll_number || !name || !dob || !gr_number || !phone || !address) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -134,6 +134,8 @@ app.post('/api/submit', async (req, res) => {
         class: cls,
         roll_number,
         name: name.trim(),
+        dob: dob,
+        gr_number: String(gr_number).trim(),
         phone: phone.trim(),
         address: address.trim()
       });
@@ -278,7 +280,7 @@ app.get('/api/admin/school/:id', requireAuth, async (req, res) => {
 
     const { data: students, error: studentsError } = await supabase
       .from('students')
-      .select('id, class, roll_number, name, phone, address, submitted_at')
+      .select('id, class, roll_number, name, dob, gr_number, phone, address, submitted_at')
       .eq('school_id', req.params.id)
       .order('class', { ascending: true })
       .order('roll_number', { ascending: true });
@@ -320,7 +322,7 @@ app.get('/api/admin/school/:id/export', requireAuth, async (req, res) => {
     // Build query
     let query = supabase
       .from('students')
-      .select('roll_number, name, class, phone, address')
+      .select('roll_number, name, dob, gr_number, class, phone, address')
       .eq('school_id', req.params.id);
 
     // Apply class filter if provided
@@ -343,6 +345,8 @@ app.get('/api/admin/school/:id/export', requireAuth, async (req, res) => {
     const rows = students.map(s => ({
       'Roll No':    s.roll_number,
       'Name':       s.name,
+      'Date of Birth': s.dob || '',
+      'GR. No':     s.gr_number || '',
       'Class':      s.class,
       'Phone':      s.phone,
       'Address':    s.address,
@@ -353,8 +357,8 @@ app.get('/api/admin/school/:id/export', requireAuth, async (req, res) => {
     const ws = XLSX.utils.json_to_sheet(rows);
 
     ws['!cols'] = [
-      { wch: 8 }, { wch: 28 }, { wch: 8 },
-      { wch: 14 }, { wch: 36 }, { wch: 16 }
+      { wch: 8 }, { wch: 28 }, { wch: 14 }, { wch: 14 },
+      { wch: 8 }, { wch: 14 }, { wch: 36 }, { wch: 16 }
     ];
 
     const sheetName = classFilter ? `Class ${classFilter}` : 'Students';

@@ -41,6 +41,26 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
+  // ── DOB hybrid input: text field + date picker sync ──────────────────────
+  const dobText   = document.getElementById('dobText');
+  const dobPicker = document.getElementById('dobPicker');
+
+  // When user picks a date from calendar → fill text field as DD-MM-YYYY
+  dobPicker.addEventListener('change', function() {
+    if (!this.value) return;
+    const [y, m, d] = this.value.split('-');
+    dobText.value = `${d}-${m}-${y}`;
+  });
+
+  // Auto-insert dashes while typing (DD-MM-YYYY)
+  dobText.addEventListener('input', function() {
+    let v = this.value.replace(/[^0-9]/g, '');          // digits only
+    if (v.length > 8) v = v.slice(0, 8);
+    if (v.length >= 5)      v = v.slice(0,2) + '-' + v.slice(2,4) + '-' + v.slice(4);
+    else if (v.length >= 3) v = v.slice(0,2) + '-' + v.slice(2);
+    this.value = v;
+  });
+
   // Handle form submission
   form.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -51,6 +71,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Get form values
     const childName = document.getElementById('childName').value.trim();
+    const dobRaw = document.getElementById('dobText').value.trim();
+    const grNumber = document.getElementById('grNumber').value.trim();
     const classValue = document.getElementById('class').value.trim();
     const sectionValue = document.getElementById('section').value.trim();
     const rollNumber = document.getElementById('rollNumber').value.trim();
@@ -62,9 +84,28 @@ document.addEventListener('DOMContentLoaded', function() {
     let error = '';
 
     // Check all fields filled
-    if (!childName || !classValue || !sectionValue || !rollNumber || !phone || !address) {
+    if (!childName || !dobRaw || !grNumber || !classValue || !sectionValue || !rollNumber || !phone || !address) {
       hasError = true;
       error = 'All fields are required';
+    }
+
+    // Parse DD-MM-YYYY and validate date of birth
+    let dobISO = '';
+    if (!hasError && dobRaw) {
+      const dobMatch = dobRaw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+      if (!dobMatch) {
+        hasError = true;
+        error = 'Date of Birth must be in DD-MM-YYYY format';
+      } else {
+        const [, dd, mm, yyyy] = dobMatch;
+        const dobDate = new Date(`${yyyy}-${mm}-${dd}`);
+        if (isNaN(dobDate.getTime()) || dobDate > new Date()) {
+          hasError = true;
+          error = 'Please enter a valid date of birth';
+        } else {
+          dobISO = `${yyyy}-${mm}-${dd}`;  // YYYY-MM-DD for API
+        }
+      }
     }
 
     // Check phone is exactly 10 digits
@@ -101,6 +142,8 @@ document.addEventListener('DOMContentLoaded', function() {
         class: combinedClass,
         roll_number: rollNum,
         name: childName,
+        dob: dobISO,
+        gr_number: grNumber,
         phone: phone,
         address: address
       })
