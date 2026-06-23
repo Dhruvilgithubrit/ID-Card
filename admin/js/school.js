@@ -278,6 +278,48 @@ function loadSchoolData() {
 /* ──────────────────────────────────────────
    Init
 ────────────────────────────────────────── */
+function openCorelDrawModal() {
+  const modal = document.getElementById('corelDrawModal');
+  modal.classList.add('active');
+}
+
+function closeCorelDrawModal() {
+  const modal = document.getElementById('corelDrawModal');
+  const input = document.getElementById('photoFolderPath');
+  modal.classList.remove('active');
+  input.value = '';
+}
+
+function generateCorelDrawCSV() {
+  const photoFolderPath = document.getElementById('photoFolderPath').value.trim();
+
+  if (!photoFolderPath) {
+    alert('Please enter the photo folder path');
+    return;
+  }
+
+  // Make sure the path ends with backslash
+  let basePath = photoFolderPath;
+  if (!basePath.endsWith('\\')) {
+    basePath += '\\';
+  }
+
+  const token = getAuthToken();
+  const encodedPath = encodeURIComponent(basePath);
+  const url = `/api/admin/school/${schoolId}/export-coreldraw?basePath=${encodedPath}&token=${encodeURIComponent(token)}`;
+
+  // Create a temporary link and download
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = true;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  // Close modal and clear input
+  closeCorelDrawModal();
+}
+
 function initializePage() {
   if (!getAuthToken()) {
     window.location.href = '/admin/login';
@@ -298,6 +340,11 @@ function initializePage() {
 
   // Refresh button
   document.getElementById('refreshBtn').addEventListener('click', loadSchoolData);
+
+  // CorelDraw Export
+  document.getElementById('corelDrawBtn').addEventListener('click', openCorelDrawModal);
+  document.getElementById('cancelCorelDrawBtn').addEventListener('click', closeCorelDrawModal);
+  document.getElementById('generateCorelDrawBtn').addEventListener('click', generateCorelDrawCSV);
 }
 
 if (document.readyState === 'loading') {

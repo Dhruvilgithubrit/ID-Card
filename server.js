@@ -523,7 +523,100 @@ app.get('/api/admin/school/:id/photos', requireAuth, async (req, res) => {
   }
 });
 
-// ── 10. POST /api/admin/add-school ───────────────────────────────────────────
+// ── 9.6 GET /api/admin/school/:schoolId/export-coreldraw ──────────────────────
+//    Export students as CSV for CorelDraw with custom photo path
+app.get('/api/admin/school/:schoolId/export-coreldraw', requireAuth, async (req, res) => {
+  try {
+    let basePath = req.query.basePath ? decodeURIComponent(req.query.basePath) : null;
+
+    if (!basePath || basePath.trim() === '') {
+      return res.status(400).json({ error: 'Photo folder path is required' });
+    }
+
+    // Make sure basePath ends with backslash
+    if (!basePath.endsWith('\\')) {
+      basePath += '\\';
+    }
+
+    // Fetch school record
+    const { data: school, error: schoolError } = await supabase
+      .from('schools')
+      .select('school_name, wants_gr_number')
+      .eq('id', req.params.schoolId)
+      .single();
+
+    if (schoolError || !school) {
+      return res.status(404).json({ error: 'School not found' });
+    }
+
+    // Fetch all students for this school
+    const { data: students, error: studentsError } = await supabase
+      .from('students')
+      .select('*')
+      .eq('school_id', req.params.schoolId)
+      .order('class', { ascending: true })
+      .order('roll_number', { ascending: true });
+
+    if (studentsError) throw studentsError;
+
+    if (!students || students.length === 0) {
+      return res.status(404).json({ error: 'No students found' });
+    }
+
+    // Build CSV content
+    const headers = ['Name', 'Class', 'Section', 'RollNumber', 'DOB', 'GRNumber', 'Phone', 'Address', 'Photo'];
+    const wantsGr = school.wants_gr_number !== false;
+
+    // Helper function to escape CSV values
+    function escapeCsvValue(value) {
+      if (value === null || value === undefined) {
+        return '';
+      }
+      const strValue = String(value);
+      if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
+        return '"' + strValue.replace(/"/g, '""') + '"';
+      }
+      return strValue;
+    }
+
+    let csv = headers.join(',') + '\n';
+
+    // Add student rows
+    console.log('DEBUG - basePath:', basePath);
+    for (const student of students) {
+      const photoPath = basePath + 'ID CARD\\' + school.school_name + '\\' + student.class + '\\' + student.roll_number + '.jpg';
+      console.log('DEBUG - photoPath:', photoPath);
+
+      const row = [
+        escapeCsvValue(student.name),
+        escapeCsvValue(student.class),
+        escapeCsvValue(student.section || ''),
+        escapeCsvValue(student.roll_number),
+        escapeCsvValue(student.dob || ''),
+        wantsGr ? escapeCsvValue(student.gr_number || '') : '',
+        escapeCsvValue(student.phone),
+        escapeCsvValue(student.address),
+        escapeCsvValue(photoPath)
+      ];
+
+      csv += row.join(',') + '\n';
+    }
+
+    // Set response headers
+    const safeName = school.school_name.replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+    const filename = `${safeName}_CorelDraw.csv`;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to generate CorelDraw export' });
+  }
+});
+
+// ── 11. POST /api/admin/add-school ───────────────────────────────────────────
 //     Insert new school with auto-generated school_code
 app.post('/api/admin/add-school', requireAuth, async (req, res) => {
   try {
@@ -581,7 +674,7 @@ app.post('/api/admin/add-school', requireAuth, async (req, res) => {
   }
 });
 
-// ── 11. DELETE /api/admin/student/:id ────────────────────────────────────────
+// ── 12. DELETE /api/admin/student/:id ────────────────────────────────────────
 //     Delete a student by id
 app.delete('/api/admin/student/:id', requireAuth, async (req, res) => {
   try {
@@ -604,7 +697,7 @@ app.delete('/api/admin/student/:id', requireAuth, async (req, res) => {
   }
 });
 
-// ── 12. DELETE /api/admin/school/:id ───────────────────────────────────────────
+// ── 13. DELETE /api/admin/school/:id ───────────────────────────────────────────
 //     Delete a school by id
 app.delete('/api/admin/school/:id', requireAuth, async (req, res) => {
   try {
