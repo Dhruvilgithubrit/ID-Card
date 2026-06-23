@@ -218,7 +218,7 @@ app.get('/api/school/:school_code', async (req, res) => {
   try {
     const { data: school, error } = await supabase
       .from('schools')
-      .select('id, school_name, school_code, classes, wants_gr_number')
+      .select('id, school_name, school_code, classes, sections, wants_gr_number')
       .eq('school_code', req.params.school_code)
       .eq('is_active', true)
       .single();
@@ -238,6 +238,7 @@ app.get('/api/school/:school_code', async (req, res) => {
       name: school.school_name,
       school_code: school.school_code,
       classes: school.classes,
+      sections: school.sections,
       wants_gr_number: school.wants_gr_number,
       student_count: count || 0
     });
@@ -526,7 +527,7 @@ app.get('/api/admin/school/:id/photos', requireAuth, async (req, res) => {
 //     Insert new school with auto-generated school_code
 app.post('/api/admin/add-school', requireAuth, async (req, res) => {
   try {
-    const { name, classes, wants_gr_number } = req.body;
+    const { name, classes, sections, wants_gr_number } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'School name is required' });
     }
@@ -545,12 +546,19 @@ app.post('/api/admin/add-school', requireAuth, async (req, res) => {
       classesArray = classes.map(c => String(c).trim()).filter(c => c.length > 0);
     }
 
+    // Format sections array
+    let sectionsArray = ['-', 'A', 'B', 'C', 'D'];
+    if (sections && Array.isArray(sections)) {
+      sectionsArray = sections.map(s => String(s).trim()).filter(s => s.length > 0);
+    }
+
     const { data: newSchool, error } = await supabase
       .from('schools')
       .insert({
         school_name: name.trim(),
         school_code,
         classes: classesArray,
+        sections: sectionsArray,
         wants_gr_number: wants_gr_number !== false
       })
       .select()
@@ -564,6 +572,7 @@ app.post('/api/admin/add-school', requireAuth, async (req, res) => {
       school_code: newSchool.school_code,
       is_active: newSchool.is_active,
       classes: newSchool.classes,
+      sections: newSchool.sections,
       wants_gr_number: newSchool.wants_gr_number
     });
   } catch (err) {

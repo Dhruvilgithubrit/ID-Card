@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const schoolName = document.getElementById('schoolName').value.trim();
     const maxStudents = document.getElementById('maxStudents').value.trim() || 60;
     const classesInput = document.getElementById('schoolClasses').value.trim();
+    const sectionsInput = document.getElementById('schoolSections').value.trim();
     const wantsGrNumber = document.getElementById('wantsGrNumber').checked;
 
     if (!schoolName) {
@@ -170,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Split classes by comma and clean up empty tokens
     const classes = classesInput.split(',').map(c => c.trim()).filter(c => c.length > 0);
+    const sections = sectionsInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
     fetch('/api/admin/add-school', {
       method: 'POST',
@@ -178,6 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
         name: schoolName,
         max_students_per_class: parseInt(maxStudents, 10),
         classes: classes,
+        sections: sections,
         wants_gr_number: wantsGrNumber
       })
     })
@@ -193,6 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
         addSchoolForm.reset();
         // Reset inputs to default values
         document.getElementById('schoolClasses').value = "Nursery, Junior KG, Senior KG, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12";
+        document.getElementById('schoolSections').value = "-, A, B, C, D";
         document.getElementById('wantsGrNumber').checked = true;
         loadSchools();
       })

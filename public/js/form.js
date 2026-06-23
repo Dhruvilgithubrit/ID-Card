@@ -49,6 +49,22 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         }
 
+        // Render sections options dynamically
+        const sectionSelect = document.getElementById('section');
+        if (sectionSelect) {
+          const sectionsList = (school.sections && Array.isArray(school.sections) && school.sections.length > 0)
+            ? school.sections
+            : ['-', 'A', 'B', 'C', 'D'];
+
+          sectionSelect.innerHTML = '<option value="">Select Section</option>';
+          sectionsList.forEach(sec => {
+            const opt = document.createElement('option');
+            opt.value = sec;
+            opt.textContent = sec === '-' ? '- (No Section)' : sec;
+            sectionSelect.appendChild(opt);
+          });
+        }
+
         // Show/hide GR number container
         const grContainer = document.getElementById('grNumberContainer');
         const grInput = document.getElementById('grNumber');
