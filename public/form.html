@@ -44,7 +44,7 @@
 
         <!-- Date of Birth and GR. No -->
         <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-          <div style="flex: 1;">
+          <div id="dobContainer" style="flex: 1;">
             <label for="dobText">Date of Birth *</label>
             <div style="position: relative;">
               <input type="text" id="dobText" name="dobText" placeholder="DD-MM-YYYY" maxlength="10" required
@@ -54,7 +54,7 @@
               <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 18px; color: var(--muted);">📅</span>
             </div>
           </div>
-          <div style="flex: 1;">
+          <div id="grNumberContainer" style="flex: 1;">
             <label for="grNumber">GR. No *</label>
             <input type="text" id="grNumber" name="grNumber" placeholder="e.g. GR-12345" required>
           </div>
@@ -66,21 +66,6 @@
             <label for="class">Class *</label>
             <select id="class" name="class" required>
               <option value="">Select Class</option>
-              <option value="Nursery">Nursery</option>
-              <option value="Junior KG">Junior KG</option>
-              <option value="Senior KG">Senior KG</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10">10</option>
-              <option value="11">11</option>
-              <option value="12">12</option>
             </select>
           </div>
           <div style="font-size: 24px; color: var(--muted); margin-bottom: 12px;">-</div>

@@ -130,8 +130,28 @@ app.post('/api/submit', upload.single('photo'), async (req, res) => {
   try {
     let { school_id, class: cls, roll_number, name, dob, gr_number, phone, address } = req.body;
 
+    if (!school_id) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'School ID is required' });
+    }
+
+    // Verify school exists and get wants_gr_number setting
+    const { data: school, error: schoolError } = await supabase
+      .from('schools')
+      .select('id, wants_gr_number')
+      .eq('id', school_id)
+      .eq('is_active', true)
+      .single();
+
+    if (schoolError || !school) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'Invalid school' });
+    }
+
+    const isGrRequired = school.wants_gr_number !== false;
+
     // Validate required fields
-    if (!school_id || !cls || !roll_number || !name || !dob || !gr_number || !phone || !address) {
+    if (!cls || !roll_number || !name || !dob || (isGrRequired && !gr_number) || !phone || !address) {
       if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'All fields are required' });
     }
@@ -151,19 +171,6 @@ app.post('/api/submit', upload.single('photo'), async (req, res) => {
       return res.status(400).json({ error: 'Phone must be exactly 10 digits' });
     }
 
-    // Verify school exists
-    const { data: school, error: schoolError } = await supabase
-      .from('schools')
-      .select('id')
-      .eq('id', school_id)
-      .eq('is_active', true)
-      .single();
-
-    if (schoolError || !school) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-      return res.status(400).json({ error: 'Invalid school' });
-    }
-
     // Insert student
     const { error } = await supabase
       .from('students')
@@ -173,7 +180,7 @@ app.post('/api/submit', upload.single('photo'), async (req, res) => {
         roll_number,
         name: name.trim(),
         dob: dob,
-        gr_number: String(gr_number).trim(),
+        gr_number: isGrRequired ? String(gr_number).trim() : null,
         phone: phone.trim(),
         address: address.trim()
       });
@@ -211,7 +218,7 @@ app.get('/api/school/:school_code', async (req, res) => {
   try {
     const { data: school, error } = await supabase
       .from('schools')
-      .select('id, school_name, school_code')
+      .select('id, school_name, school_code, classes, wants_gr_number')
       .eq('school_code', req.params.school_code)
       .eq('is_active', true)
       .single();
@@ -230,6 +237,8 @@ app.get('/api/school/:school_code', async (req, res) => {
       id: school.id,
       name: school.school_name,
       school_code: school.school_code,
+      classes: school.classes,
+      wants_gr_number: school.wants_gr_number,
       student_count: count || 0
     });
   } catch (err) {
@@ -387,25 +396,38 @@ app.get('/api/admin/school/:id/export', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'No students found' });
     }
 
-    // Build worksheet rows
-    const rows = students.map(s => ({
-      'Roll No':    s.roll_number,
-      'Name':       s.name,
-      'Date of Birth': s.dob || '',
-      'GR. No':     s.gr_number || '',
-      'Class':      s.class,
-      'Phone':      s.phone,
-      'Address':    s.address,
-      'Photo File': `Roll_${s.roll_number}.jpg`
-    }));
+    // Build worksheet rows dynamically based on wants_gr_number
+    const wantsGr = school.wants_gr_number !== false;
+    const rows = students.map(s => {
+      const row = {
+        'Roll No':    s.roll_number,
+        'Name':       s.name,
+        'Date of Birth': s.dob || ''
+      };
+      if (wantsGr) {
+        row['GR. No'] = s.gr_number || '';
+      }
+      row['Class'] = s.class;
+      row['Phone'] = s.phone;
+      row['Address'] = s.address;
+      row['Photo File'] = `Roll_${s.roll_number}.jpg`;
+      return row;
+    });
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(rows);
 
-    ws['!cols'] = [
-      { wch: 8 }, { wch: 28 }, { wch: 14 }, { wch: 14 },
-      { wch: 8 }, { wch: 14 }, { wch: 36 }, { wch: 16 }
-    ];
+    if (wantsGr) {
+      ws['!cols'] = [
+        { wch: 8 }, { wch: 28 }, { wch: 14 }, { wch: 14 },
+        { wch: 8 }, { wch: 14 }, { wch: 36 }, { wch: 16 }
+      ];
+    } else {
+      ws['!cols'] = [
+        { wch: 8 }, { wch: 28 }, { wch: 14 },
+        { wch: 8 }, { wch: 14 }, { wch: 36 }, { wch: 16 }
+      ];
+    }
 
     const sheetName = classFilter ? `Class ${classFilter}` : 'Students';
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
@@ -456,7 +478,7 @@ app.get('/api/admin/school/:id/photos', requireAuth, async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Type', 'application/zip');
 
-    const archive = archiver('zip', {
+    const archive = new archiver.ZipArchive({
       zlib: { level: 9 } // Sets the compression level.
     });
 
@@ -495,7 +517,7 @@ app.get('/api/admin/school/:id/photos', requireAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     if (!res.headersSent) {
-      res.status(500).json({ error: 'Failed to generate zip' });
+      res.status(500).json({ error: 'Failed to generate zip', details: err.stack || err.message });
     }
   }
 });
@@ -504,7 +526,7 @@ app.get('/api/admin/school/:id/photos', requireAuth, async (req, res) => {
 //     Insert new school with auto-generated school_code
 app.post('/api/admin/add-school', requireAuth, async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, classes, wants_gr_number } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'School name is required' });
     }
@@ -517,11 +539,19 @@ app.post('/api/admin/add-school', requireAuth, async (req, res) => {
     }
     const school_code = `SCH_${suffix}`;
 
+    // Format classes array
+    let classesArray = ['Nursery', 'Junior KG', 'Senior KG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+    if (classes && Array.isArray(classes)) {
+      classesArray = classes.map(c => String(c).trim()).filter(c => c.length > 0);
+    }
+
     const { data: newSchool, error } = await supabase
       .from('schools')
       .insert({
         school_name: name.trim(),
-        school_code
+        school_code,
+        classes: classesArray,
+        wants_gr_number: wants_gr_number !== false
       })
       .select()
       .single();
@@ -532,7 +562,9 @@ app.post('/api/admin/add-school', requireAuth, async (req, res) => {
       id: newSchool.id,
       name: newSchool.school_name,
       school_code: newSchool.school_code,
-      is_active: newSchool.is_active
+      is_active: newSchool.is_active,
+      classes: newSchool.classes,
+      wants_gr_number: newSchool.wants_gr_number
     });
   } catch (err) {
     console.error(err);

@@ -32,6 +32,35 @@ document.addEventListener('DOMContentLoaded', function() {
         if (pageHeading) {
           pageHeading.textContent = school.name || school.school_name;
         }
+
+        // Render classes options dynamically
+        const classSelect = document.getElementById('class');
+        if (classSelect) {
+          const classesList = (school.classes && Array.isArray(school.classes) && school.classes.length > 0)
+            ? school.classes
+            : ['Nursery', 'Junior KG', 'Senior KG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+
+          classSelect.innerHTML = '<option value="">Select Class</option>';
+          classesList.forEach(cls => {
+            const opt = document.createElement('option');
+            opt.value = cls;
+            opt.textContent = cls;
+            classSelect.appendChild(opt);
+          });
+        }
+
+        // Show/hide GR number container
+        const grContainer = document.getElementById('grNumberContainer');
+        const grInput = document.getElementById('grNumber');
+        if (school.wants_gr_number === false) {
+          if (grContainer) grContainer.style.display = 'none';
+          if (grInput) grInput.removeAttribute('required');
+          window.wantsGrNumber = false;
+        } else {
+          if (grContainer) grContainer.style.display = '';
+          if (grInput) grInput.setAttribute('required', 'required');
+          window.wantsGrNumber = true;
+        }
       })
       .catch(error => {
         console.error('Error fetching school:', error);
@@ -72,7 +101,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get form values
     const childName = document.getElementById('childName').value.trim();
     const dobRaw = document.getElementById('dobText').value.trim();
-    const grNumber = document.getElementById('grNumber').value.trim();
+    const isGrRequired = window.wantsGrNumber !== false;
+    const grNumber = isGrRequired ? document.getElementById('grNumber').value.trim() : '';
     const classValue = document.getElementById('class').value.trim();
     const sectionValue = document.getElementById('section').value.trim();
     const rollNumber = document.getElementById('rollNumber').value.trim();
@@ -88,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const missingFields = [];
     if (!childName) missingFields.push('Child Name');
     if (!dobRaw) missingFields.push('Date of Birth');
-    if (!grNumber) missingFields.push('GR Number');
+    if (isGrRequired && !grNumber) missingFields.push('GR Number');
     if (!classValue) missingFields.push('Class');
     if (!sectionValue) missingFields.push('Section');
     if (!rollNumber) missingFields.push('Roll Number');

@@ -327,7 +327,7 @@
 
   <!-- Add New School Modal -->
   <div class="modal" id="addSchoolModal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 550px;">
       <div class="modal-header">Add New School</div>
       <form class="modal-form" id="addSchoolForm">
         <div>
@@ -337,6 +337,15 @@
         <div>
           <label for="maxStudents">Max Students Per Class *</label>
           <input type="number" id="maxStudents" name="maxStudents" placeholder="60" value="60" required>
+        </div>
+        <div>
+          <label for="schoolClasses">Classes (comma-separated) *</label>
+          <input type="text" id="schoolClasses" name="schoolClasses" value="Nursery, Junior KG, Senior KG, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12" required>
+          <small style="color: var(--muted); font-size: 11px; display: block; margin-top: -6px; margin-bottom: 12px;">Classes listed here will appear in the registration dropdown menu.</small>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px; margin-bottom: 12px;">
+          <input type="checkbox" id="wantsGrNumber" name="wantsGrNumber" checked style="width: 18px; height: 18px; cursor: pointer; margin: 0;">
+          <label for="wantsGrNumber" style="margin-bottom: 0; cursor: pointer; font-weight: 500; font-size: 14px;">Require GR. Number in Form</label>
         </div>
       </form>
       <div class="modal-buttons">

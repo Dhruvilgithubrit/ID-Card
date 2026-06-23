@@ -87,7 +87,7 @@ function renderStudents(students) {
               <th>Roll No</th>
               <th>Student Name</th>
               <th>DOB</th>
-              <th>GR. No</th>
+              ${schoolData && schoolData.wants_gr_number !== false ? '<th>GR. No</th>' : ''}
               <th>Phone</th>
               <th>Address</th>
               <th>Registered On</th>
@@ -100,7 +100,7 @@ function renderStudents(students) {
                 <td><span class="roll-badge">${s.roll_number}</span></td>
                 <td class="student-name">${escapeHtml(s.name)}</td>
                 <td class="dob-cell">${s.dob ? formatDate(s.dob) : '—'}</td>
-                <td class="gr-cell">${s.gr_number ? escapeHtml(s.gr_number) : '—'}</td>
+                ${schoolData && schoolData.wants_gr_number !== false ? `<td class="gr-cell">${s.gr_number ? escapeHtml(s.gr_number) : '—'}</td>` : ''}
                 <td class="phone-cell">${escapeHtml(s.phone)}</td>
                 <td class="address-cell" title="${escapeHtml(s.address)}">${escapeHtml(s.address)}</td>
                 <td class="submitted-cell">${formatDate(s.submitted_at)}</td>

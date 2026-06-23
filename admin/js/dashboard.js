@@ -98,8 +98,12 @@ document.addEventListener('DOMContentLoaded', function() {
         <td>
           <div class="action-buttons">
             <a href="/admin/school/${school.id}" class="btn-small btn-view">View →</a>
-            <a href="/api/admin/school/${school.id}/export?token=${encodeURIComponent(getAuthToken())}" download class="btn-small btn-export">Export Excel</a>
-            <a href="/api/admin/school/${school.id}/photos?token=${encodeURIComponent(getAuthToken())}" download class="btn-small btn-export">Export Photos</a>
+            ${(school.student_count || 0) > 0 
+               ? `<a href="/api/admin/school/${school.id}/export?token=${encodeURIComponent(getAuthToken())}" download class="btn-small btn-export">Export Excel</a>
+                  <a href="/api/admin/school/${school.id}/photos?token=${encodeURIComponent(getAuthToken())}" download class="btn-small btn-export">Export Photos</a>`
+               : `<button class="btn-small btn-export" onclick="alert('No students registered yet!')" style="opacity: 0.6; cursor: not-allowed; border: 1px solid #e5e7eb;">Export Excel</button>
+                  <button class="btn-small btn-export" onclick="alert('No students registered yet!')" style="opacity: 0.6; cursor: not-allowed; border: 1px solid #e5e7eb;">Export Photos</button>`
+            }
             <button class="btn-small btn-delete" data-school-id="${school.id}" data-school-name="${school.name || school.school_name}">Delete</button>
           </div>
         </td>
@@ -156,18 +160,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const schoolName = document.getElementById('schoolName').value.trim();
     const maxStudents = document.getElementById('maxStudents').value.trim() || 60;
+    const classesInput = document.getElementById('schoolClasses').value.trim();
+    const wantsGrNumber = document.getElementById('wantsGrNumber').checked;
 
     if (!schoolName) {
       alert('School name is required');
       return;
     }
 
+    // Split classes by comma and clean up empty tokens
+    const classes = classesInput.split(',').map(c => c.trim()).filter(c => c.length > 0);
+
     fetch('/api/admin/add-school', {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({
         name: schoolName,
-        max_students_per_class: parseInt(maxStudents, 10)
+        max_students_per_class: parseInt(maxStudents, 10),
+        classes: classes,
+        wants_gr_number: wantsGrNumber
       })
     })
       .then(response => response.json())
@@ -180,6 +191,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Success - close modal and reload schools
         modal.classList.remove('active');
         addSchoolForm.reset();
+        // Reset inputs to default values
+        document.getElementById('schoolClasses').value = "Nursery, Junior KG, Senior KG, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12";
+        document.getElementById('wantsGrNumber').checked = true;
         loadSchools();
       })
       .catch(error => {
