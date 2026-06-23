@@ -78,15 +78,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const rollNumber = document.getElementById('rollNumber').value.trim();
     const phone = document.getElementById('phone').value.trim();
     const address = document.getElementById('address').value.trim();
+    const photoFile = document.getElementById('photo').files[0];
 
     // Validation
     let hasError = false;
     let error = '';
 
     // Check all fields filled
-    if (!childName || !dobRaw || !grNumber || !classValue || !sectionValue || !rollNumber || !phone || !address) {
+    if (!childName || !dobRaw || !grNumber || !classValue || !sectionValue || !rollNumber || !phone || !address || !photoFile) {
       hasError = true;
       error = 'All fields are required';
+    }
+
+    if (!hasError && photoFile && photoFile.size > 5 * 1024 * 1024) {
+      hasError = true;
+      error = 'Student Photo must be less than 5MB';
     }
 
     // Parse DD-MM-YYYY and validate date of birth
@@ -132,21 +138,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validation passed - submit to API
     const combinedClass = classValue + '-' + sectionValue;
     
+    const formData = new FormData();
+    formData.append('school_id', schoolId);
+    formData.append('class', combinedClass);
+    formData.append('roll_number', rollNum);
+    formData.append('name', childName);
+    formData.append('dob', dobISO);
+    formData.append('gr_number', grNumber);
+    formData.append('phone', phone);
+    formData.append('address', address);
+    formData.append('photo', photoFile);
+
     fetch('/api/submit', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        school_id: schoolId,
-        class: combinedClass,
-        roll_number: rollNum,
-        name: childName,
-        dob: dobISO,
-        gr_number: grNumber,
-        phone: phone,
-        address: address
-      })
+      body: formData
     })
       .then(response => response.json())
       .then(data => {

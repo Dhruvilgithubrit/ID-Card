@@ -5,10 +5,32 @@ const express  = require('express');
 const path     = require('path');
 const bcrypt   = require('bcryptjs');
 const XLSX     = require('xlsx');
+const multer   = require('multer');
+const fs       = require('fs');
+const archiver = require('archiver');
 
 const supabase = require('./supabase');
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Setup multer for photo uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = path.join(__dirname, 'data', 'photos');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 
@@ -104,21 +126,28 @@ app.get('/api/schools', async (req, res) => {
 
 // ── 2. POST /api/submit ───────────────────────────────────────────────────────
 //    Register a student
-app.post('/api/submit', async (req, res) => {
+app.post('/api/submit', upload.single('photo'), async (req, res) => {
   try {
     let { school_id, class: cls, roll_number, name, dob, gr_number, phone, address } = req.body;
 
     // Validate required fields
     if (!school_id || !cls || !roll_number || !name || !dob || !gr_number || !phone || !address) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Student photo is required' });
     }
 
     roll_number = parseInt(roll_number, 10);
     if (isNaN(roll_number) || roll_number < 1 || roll_number > 999) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Roll number must be between 1 and 999' });
     }
 
     if (!/^\d{10}$/.test(String(phone))) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Phone must be exactly 10 digits' });
     }
 
@@ -131,6 +160,7 @@ app.post('/api/submit', async (req, res) => {
       .single();
 
     if (schoolError || !school) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Invalid school' });
     }
 
@@ -149,6 +179,7 @@ app.post('/api/submit', async (req, res) => {
       });
 
     if (error) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       // Handle unique constraint violation
       if (error.code === '23505') {
         return res.status(400).json({
@@ -158,10 +189,17 @@ app.post('/api/submit', async (req, res) => {
       throw error;
     }
 
+    // Rename file to schoolId_class_rollNumber.ext
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const newFilename = `${school_id}_${cls}_${roll_number}${ext}`;
+    const newPath = path.join(req.file.destination, newFilename);
+    fs.renameSync(req.file.path, newPath);
+
     return res.status(201).json({
       message: `Data saved for Class ${cls}, Roll No. ${roll_number}`
     });
   } catch (err) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     console.error(err);
     res.status(500).json({ error: 'Failed to save data' });
   }
@@ -384,6 +422,81 @@ app.get('/api/admin/school/:id/export', requireAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to generate export' });
+  }
+});
+
+// ── 9.5 GET /api/admin/school/:id/photos ─────────────────────────────────────
+//    Download photos as .zip
+app.get('/api/admin/school/:id/photos', requireAuth, async (req, res) => {
+  try {
+    const { data: school, error: schoolError } = await supabase
+      .from('schools')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (schoolError || !school) {
+      return res.status(404).json({ error: 'School not found' });
+    }
+
+    const { data: students, error: studentsError } = await supabase
+      .from('students')
+      .select('roll_number, class')
+      .eq('school_id', req.params.id);
+
+    if (studentsError) throw studentsError;
+
+    if (!students || students.length === 0) {
+      return res.status(404).json({ error: 'No students found' });
+    }
+
+    const safeSchoolName = school.school_name.replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+    const filename = `ID_CARD_${safeSchoolName}_Photos.zip`;
+
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/zip');
+
+    const archive = archiver('zip', {
+      zlib: { level: 9 } // Sets the compression level.
+    });
+
+    archive.on('error', function(err) {
+      throw err;
+    });
+
+    archive.pipe(res);
+
+    const photosDir = path.join(__dirname, 'data', 'photos');
+    
+    // Add files to archive
+    for (const s of students) {
+      const prefix = `${req.params.id}_${s.class}_${s.roll_number}.`;
+      let foundFile = null;
+      if (fs.existsSync(photosDir)) {
+        const files = fs.readdirSync(photosDir);
+        for (const f of files) {
+          if (f.startsWith(prefix)) {
+            foundFile = f;
+            break;
+          }
+        }
+      }
+
+      if (foundFile) {
+        const filePath = path.join(photosDir, foundFile);
+        const ext = path.extname(foundFile);
+        const internalPath = `ID CARD/${safeSchoolName}/${s.class}/${s.roll_number}${ext}`;
+        archive.file(filePath, { name: internalPath });
+      }
+    }
+
+    await archive.finalize();
+
+  } catch (err) {
+    console.error(err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to generate zip' });
+    }
   }
 });
 

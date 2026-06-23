@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="action-buttons">
             <a href="/admin/school/${school.id}" class="btn-small btn-view">View →</a>
             <a href="/api/admin/school/${school.id}/export?token=${encodeURIComponent(getAuthToken())}" download class="btn-small btn-export">Export Excel</a>
+            <a href="/api/admin/school/${school.id}/photos?token=${encodeURIComponent(getAuthToken())}" download class="btn-small btn-export">Export Photos</a>
             <button class="btn-small btn-delete" data-school-id="${school.id}" data-school-name="${school.name || school.school_name}">Delete</button>
           </div>
         </td>
