@@ -85,9 +85,20 @@ document.addEventListener('DOMContentLoaded', function() {
     let error = '';
 
     // Check all fields filled
-    if (!childName || !dobRaw || !grNumber || !classValue || !sectionValue || !rollNumber || !phone || !address || !photoFile) {
+    const missingFields = [];
+    if (!childName) missingFields.push('Child Name');
+    if (!dobRaw) missingFields.push('Date of Birth');
+    if (!grNumber) missingFields.push('GR Number');
+    if (!classValue) missingFields.push('Class');
+    if (!sectionValue) missingFields.push('Section');
+    if (!rollNumber) missingFields.push('Roll Number');
+    if (!phone) missingFields.push('Phone');
+    if (!address) missingFields.push('Address');
+    if (!photoFile) missingFields.push('Student Photo');
+
+    if (missingFields.length > 0) {
       hasError = true;
-      error = 'All fields are required';
+      error = 'Missing fields: ' + missingFields.join(', ');
     }
 
     if (!hasError && photoFile && photoFile.size > 5 * 1024 * 1024) {
@@ -177,4 +188,36 @@ document.addEventListener('DOMContentLoaded', function() {
         form.scrollIntoView({ behavior: 'smooth' });
       });
   });
+
+  // Photo Preview Logic
+  const photoInput = document.getElementById('photo');
+  const photoPreview = document.getElementById('photoPreview');
+  const photoPlaceholder = document.getElementById('photoPlaceholder');
+
+  if (photoInput) {
+    photoInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          if (photoPreview) {
+            photoPreview.src = e.target.result;
+            photoPreview.style.display = 'block';
+          }
+          if (photoPlaceholder) {
+            photoPlaceholder.style.display = 'none';
+          }
+        }
+        reader.readAsDataURL(file);
+      } else {
+        if (photoPreview) {
+          photoPreview.src = '';
+          photoPreview.style.display = 'none';
+        }
+        if (photoPlaceholder) {
+          photoPlaceholder.style.display = 'block';
+        }
+      }
+    });
+  }
 });
